@@ -1,0 +1,9 @@
+﻿l_spanish:
+ fy_disasters.1.t:0 "Un desastre en el campo de batalla"
+ fy_disasters.1.d:0 "Las noticias de la batalla contra $scope:fy_current_enemy$ han llegado a la capital, y son tan malas como se temía. Nuestras tropas sufrieron muchas más bajas, proporcionalmente, que el enemigo, y la magnitud del enfrentamiento hace imposible ocultarlo por completo.\n\nLa opinión pública exige respuestas. El gobierno debe decidir cómo gestionar el escándalo."
+ fy_disasters.1.a:0 "Que el general rinda cuentas"
+ fy_disasters.1.a.tt:0 "El general responsable será destituido de todos sus cargos. Su grupo de interés perderá una parte importante de su influencia. Si dicho grupo forma parte del gobierno, este perderá legitimidad."
+ fy_disasters.1.b:0 "Silenciar el escándalo"
+ fy_disasters.1.c:0 "Culpar a las élites políticas y la degeneración cultural"
+ fy_disasters.1.c.tt:0 "Los agitadores fascistas usarán esta derrota como munición propagandística. Su influencia y capacidad de agitación crecerán notablemente, a costa de la legitimidad y el prestigio del gobierno."
+ fy_disasters.1.d:0 "Anunciar una auditoría sobre el equipamiento militar"

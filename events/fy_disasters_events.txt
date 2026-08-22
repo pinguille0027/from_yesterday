@@ -1,0 +1,177 @@
+namespace = fy_disasters
+
+# =====================================================================
+# fy_disasters.1
+# Una derrota decisiva contra un rival.
+# =====================================================================
+country_event = {
+	id = fy_disasters.1
+	title = fy_disasters.1.t
+	desc = fy_disasters.1.d
+	picture = "gfx/interface/illustrations/events/generic_war_2.dds"
+	event_image = {
+		texture = "gfx/interface/illustrations/events/generic_war_2.dds"
+	}
+
+	trigger = {
+		has_technology_researched = nationalism
+
+		# --- 2. El enemigo es rival ---
+		exists = scope:fy_current_enemy
+		scope:fy_current_enemy = { is_rival_of = root } # ajusta al comando real de tu rivalidad si difiere
+
+		# --- 3. La batalla implicó una parte significativa de nuestro ejército ---
+		# Aproximación: si perdimos un % grande de nuestro ejército TOTAL en
+		# una sola batalla, es porque una parte significativa estaba metida
+		# en ella. No hay forma nativa de leer "tropas en ESTA batalla" vs
+		# "tropas totales", así que usamos esto como proxy razonable.
+		exists = var:fy_own_loss_pct
+		var:fy_own_loss_pct >= 0.10
+
+		# --- 4. Diferencia porcentual de bajas > 15 puntos ---
+		exists = var:fy_casualty_gap
+		var:fy_casualty_gap >= 0.15
+	}
+
+	immediate = {
+		scope:enemy = scope:fy_current_enemy
+		if = {
+			limit = { exists = scope:attacker }
+			scope:general = scope:attacker
+		}
+		else = {
+			scope:general = scope:defender
+		}
+	}
+
+	option = { # Opción 1: rendir cuentas
+		name = fy_disasters.1.a
+
+		custom_tooltip = fy_disasters.1.a.tt
+
+		if = {
+			limit = { exists = scope:general }
+			scope:general = {
+				remove_character_role = general
+				add_modifier = {
+					name = fy_general_disgraced
+					days = 1825
+				}
+				interest_group = {
+					add_modifier = {
+						name = fy_general_ig_influence_loss
+						days = 1825
+					}
+					if = {
+						limit = { is_in_government = yes }
+						root = { add_legitimacy = -10 }
+					}
+				}
+			}
+		}
+	}
+
+	option = { # Opción 2: silenciar el escándalo
+		name = fy_disasters.1.b
+
+		ig:ig_armed_forces = {
+			add_modifier = {
+				name = fy_cover_up_armed_forces_boost
+				days = 1825
+			}
+			add_modifier = {
+				name = fy_cover_up_officers_approval
+				days = 1825
+			}
+		}
+
+		if = {
+			limit = {
+				OR = {
+					has_law = law_type:law_professional_army
+				}
+			}
+			ig:ig_armed_forces = {
+				add_modifier = {
+					name = fy_cover_up_soldiers_anger
+					days = 1825
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				OR = {
+					has_law = law_type:law_mass_mobilization
+					has_law = law_type:law_militia_army
+				}
+			}
+			ig:ig_trade_unions = {
+				add_modifier = {
+					name = fy_cover_up_workers_peasants_anger
+					days = 1825
+				}
+			}
+			ig:ig_rural_folk = {
+				add_modifier = {
+					name = fy_cover_up_workers_peasants_anger
+					days = 1825
+				}
+			}
+		}
+
+		add_modifier = {
+			name = fy_cover_up_pacifism
+			days = 1825
+		}
+	}
+
+	option = { # Opción 3: culpar a las élites políticas y la degeneración cultural
+		name = fy_disasters.1.c
+		trigger = {
+			has_country_flag = fy_fascism_exists # sustituye por tu chequeo real de existencia de fascismo
+			NOT = { has_country_flag = fy_fascism_in_government }
+		}
+
+		custom_tooltip = fy_disasters.1.c.tt
+		add_country_flag = fy_fascist_agitation_boost # engánchalo a tu sistema de movimientos políticos
+
+		add_legitimacy = -10
+		add_prestige = -10
+	}
+
+	option = { # Opción 4: auditoría sobre el equipamiento militar
+		name = fy_disasters.1.d
+
+		ig:ig_industrialists = {
+			add_modifier = {
+				name = fy_audit_capitalist_anger
+				days = 1825
+			}
+		}
+
+		every_building = {
+			limit = {
+				OR = {
+					building_type = building_arms_industry
+					building_type = building_artillery_foundries
+				}
+			}
+			add_modifier = {
+				name = fy_audit_arms_production_penalty
+				days = 1825
+			}
+		}
+	}
+
+	after = {
+		remove_variable = fy_battle_start_own_army
+		remove_variable = fy_battle_start_enemy_army
+		remove_variable = fy_own_army_after
+		remove_variable = fy_enemy_army_after
+		remove_variable = fy_own_losses
+		remove_variable = fy_enemy_losses
+		remove_variable = fy_own_loss_pct
+		remove_variable = fy_enemy_loss_pct
+		remove_variable = fy_casualty_gap
+	}
+}

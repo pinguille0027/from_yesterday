@@ -1,0 +1,108 @@
+# =====================================================================
+# Sistema de tracking de batallas "hecho en casa", porque Victoria 3
+# NO expone bajas como valor directo en ningun trigger/effect (verificado
+# contra la documentacion de script_docs para la version 1.13).
+#
+# Estrategia: on_battle_started / on_battle_ended son on_actions reales
+# que se disparan para AMBOS bandos por separado:
+#   Root              = tu pais (el bando que recibe el evento)
+#   scope:enemy_country = el rival en esa batalla
+#   scope:battle        = la batalla
+#   scope:attacker / scope:defender = comandantes
+#   scope:state          = estado donde ocurre
+#
+# army_size_including_conscripts SI se puede leer de cualquier pais
+# (no solo el tuyo), asi que comparamos el tamano del ejercito propio
+# y del enemigo antes y despues de la batalla. La diferencia es
+# nuestro proxy de "bajas" (en realidad son bajas + deserciones +
+# unidades reasignadas a otro frente, pero es lo mejor disponible).
+# =====================================================================
+
+on_battle_started = {
+	effect = {
+		hidden_effect = {
+			set_variable = {
+				name = fy_battle_start_own_army
+				value = army_size_including_conscripts
+			}
+			if = {
+				limit = { exists = scope:enemy_country }
+				scope:enemy_country = {
+					save_scope_as = fy_current_enemy
+				}
+				set_variable = {
+					name = fy_battle_start_enemy_army
+					value = scope:enemy_country.army_size_including_conscripts
+				}
+			}
+		}
+	}
+}
+
+on_battle_ended = {
+	effect = {
+		hidden_effect = {
+			# Solo calculamos si de verdad teniamos datos de "inicio" guardados
+			# (por si el on_battle_started no llego a dispararse por algun motivo)
+			if = {
+				limit = {
+					exists = var:fy_battle_start_own_army
+					exists = var:fy_battle_start_enemy_army
+					exists = scope:fy_current_enemy
+				}
+
+				set_variable = {
+					name = fy_own_army_after
+					value = army_size_including_conscripts
+				}
+				set_variable = {
+					name = fy_enemy_army_after
+					value = scope:fy_current_enemy.army_size_including_conscripts
+				}
+
+				# bajas propias = ejercito antes - ejercito despues (nunca negativo)
+				set_variable = {
+					name = fy_own_losses
+					value = var:fy_battle_start_own_army
+					subtract = var:fy_own_army_after
+				}
+				clamp_variable = {
+					name = fy_own_losses
+					min = 0
+				}
+
+				set_variable = {
+					name = fy_enemy_losses
+					value = var:fy_battle_start_enemy_army
+					subtract = var:fy_enemy_army_after
+				}
+				clamp_variable = {
+					name = fy_enemy_losses
+					min = 0
+				}
+
+				# porcentajes
+				set_variable = {
+					name = fy_own_loss_pct
+					value = var:fy_own_losses
+					divide = var:fy_battle_start_own_army
+				}
+				set_variable = {
+					name = fy_enemy_loss_pct
+					value = var:fy_enemy_losses
+					divide = var:fy_battle_start_enemy_army
+				}
+
+				# brecha de bajas (positiva = nosotros salimos peor parados)
+				set_variable = {
+					name = fy_casualty_gap
+					value = var:fy_own_loss_pct
+					subtract = var:fy_enemy_loss_pct
+				}
+			}
+		}
+	}
+	events = {
+		fy_disasters.1
+	}
+}

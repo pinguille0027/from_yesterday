@@ -1,0 +1,59 @@
+# =====================================================================
+# Modificadores usados por el evento fy_disasters.1
+# Ajusta los valores a tu gusto/balance.
+# =====================================================================
+
+# --- Opción 1: rendición de cuentas ---
+fy_general_disgraced = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	ig_approval_add = -10
+}
+
+fy_general_ig_influence_loss = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	ig_influence_add = -0.15 # -15% de influencia relativa del GI
+}
+
+# --- Opción 2: silenciar el escándalo ---
+fy_cover_up_armed_forces_boost = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_good.dds"
+	ig_approval_add = 15
+	ig_influence_add = 0.10
+}
+
+fy_cover_up_officers_approval = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_good.dds"
+	country_ig_approval_add = 10 # aplicado sobre ig_armed_forces = oficiales
+}
+
+fy_cover_up_soldiers_anger = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	ig_approval_add = -15
+}
+
+fy_cover_up_workers_peasants_anger = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	ig_approval_add = -10
+}
+
+fy_cover_up_pacifism = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	war_support_mult = -0.10
+}
+
+# --- Opción 3: culpar a las élites / degeneración cultural ---
+fy_blame_elites_legitimacy = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	legitimacy_govt_change_add = -10
+}
+
+# --- Opción 4: auditoría militar ---
+fy_audit_capitalist_anger = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	ig_approval_add = -12
+}
+
+fy_audit_arms_production_penalty = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	throughput_add = -0.15
+}
