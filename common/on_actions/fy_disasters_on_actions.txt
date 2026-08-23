@@ -1,24 +1,32 @@
-# =====================================================================
-# Sistema de tracking de batallas "hecho en casa", porque Victoria 3
-# NO expone bajas como valor directo en ningun trigger/effect (verificado
-# contra la documentacion de script_docs para la version 1.13).
-#
-# Estrategia: on_battle_started / on_battle_ended son on_actions reales
-# que se disparan para AMBOS bandos por separado:
-#   Root              = tu pais (el bando que recibe el evento)
-#   scope:enemy_country = el rival en esa batalla
-#   scope:battle        = la batalla
-#   scope:attacker / scope:defender = comandantes
-#   scope:state          = estado donde ocurre
-#
-# army_size_including_conscripts SI se puede leer de cualquier pais
-# (no solo el tuyo), asi que comparamos el tamano del ejercito propio
-# y del enemigo antes y despues de la batalla. La diferencia es
-# nuestro proxy de "bajas" (en realidad son bajas + deserciones +
-# unidades reasignadas a otro frente, pero es lo mejor disponible).
+﻿# =====================================================================
+# FIX (ronda 2): "subtract_variable" / "divide_variable" NO EXISTEN como
+# efectos independientes (confirmado: "Unknown effect subtract_variable/
+# divide_variable"). La forma real de hacer aritmética entre variables
+# en Vic3 es anidar un bloque de "valor" con los operadores add/subtract/
+# multiply/divide/min/max DENTRO del campo "value" de set_variable,
+# exactamente como en un script value con nombre. Ejemplo real de la
+# wiki:
+#   first_example = { add = 6 multiply = { value = 3 divide = 2 } max = 10 subtract = 3 }
+# Aplicamos ese mismo patrón aquí, y aprovechamos "min"/"max" para
+# sustituir también a clamp_variable (que no hemos podido confirmar).
 # =====================================================================
 
 on_battle_started = {
+	on_actions = {
+		fy_on_battle_started
+	}
+}
+
+on_battle_ended = {
+	on_actions = {
+		fy_on_battle_ended
+	}
+	events = {
+		fy_disasters.1
+	}
+}
+
+fy_on_battle_started = {
 	effect = {
 		hidden_effect = {
 			set_variable = {
@@ -39,11 +47,9 @@ on_battle_started = {
 	}
 }
 
-on_battle_ended = {
+fy_on_battle_ended = {
 	effect = {
 		hidden_effect = {
-			# Solo calculamos si de verdad teniamos datos de "inicio" guardados
-			# (por si el on_battle_started no llego a dispararse por algun motivo)
 			if = {
 				limit = {
 					exists = var:fy_battle_start_own_army
@@ -51,58 +57,52 @@ on_battle_ended = {
 					exists = scope:fy_current_enemy
 				}
 
-				set_variable = {
-					name = fy_own_army_after
-					value = army_size_including_conscripts
-				}
-				set_variable = {
-					name = fy_enemy_army_after
-					value = scope:fy_current_enemy.army_size_including_conscripts
-				}
+				set_variable = { name = fy_own_army_after value = army_size_including_conscripts }
+				set_variable = { name = fy_enemy_army_after value = scope:fy_current_enemy.army_size_including_conscripts }
 
-				# bajas propias = ejercito antes - ejercito despues (nunca negativo)
+				# bajas propias = max(0, ejercito_antes - ejercito_despues)
 				set_variable = {
 					name = fy_own_losses
-					value = var:fy_battle_start_own_army
-					subtract = var:fy_own_army_after
-				}
-				clamp_variable = {
-					name = fy_own_losses
-					min = 0
+					value = {
+						value = var:fy_battle_start_own_army
+						subtract = var:fy_own_army_after
+						min = 0
+					}
 				}
 
 				set_variable = {
 					name = fy_enemy_losses
-					value = var:fy_battle_start_enemy_army
-					subtract = var:fy_enemy_army_after
-				}
-				clamp_variable = {
-					name = fy_enemy_losses
-					min = 0
+					value = {
+						value = var:fy_battle_start_enemy_army
+						subtract = var:fy_enemy_army_after
+						min = 0
+					}
 				}
 
-				# porcentajes
 				set_variable = {
 					name = fy_own_loss_pct
-					value = var:fy_own_losses
-					divide = var:fy_battle_start_own_army
-				}
-				set_variable = {
-					name = fy_enemy_loss_pct
-					value = var:fy_enemy_losses
-					divide = var:fy_battle_start_enemy_army
+					value = {
+						value = var:fy_own_losses
+						divide = var:fy_battle_start_own_army
+					}
 				}
 
-				# brecha de bajas (positiva = nosotros salimos peor parados)
+				set_variable = {
+					name = fy_enemy_loss_pct
+					value = {
+						value = var:fy_enemy_losses
+						divide = var:fy_battle_start_enemy_army
+					}
+				}
+
 				set_variable = {
 					name = fy_casualty_gap
-					value = var:fy_own_loss_pct
-					subtract = var:fy_enemy_loss_pct
+					value = {
+						value = var:fy_own_loss_pct
+						subtract = var:fy_enemy_loss_pct
+					}
 				}
 			}
 		}
-	}
-	events = {
-		fy_disasters.1
 	}
 }

@@ -1,0 +1,40 @@
+﻿namespace = fy_disasters_test
+
+# =====================================================================
+# SOLO PARA PRUEBAS. No es parte del mod real — bórralo cuando termines
+# de depurar. Rellena a mano los datos que normalmente pone
+# fy_on_battle_ended, y luego dispara fy_disasters.1 con esos datos ya
+# listos, para poder ver el evento real sin tener que montar una guerra
+# de verdad cada vez.
+#
+# Uso: en consola de debug, escribe:  event fy_disasters_test.1
+# =====================================================================
+fy_disasters_test.1 = {
+	type = country_event
+	hidden = yes
+
+	immediate = {
+		# Elige cualquier país como "enemigo rival" de prueba.
+		# Sustituye TAG por el tag de un país que tengas rivalizado
+		# en tu partida de prueba (por ejemplo c:PER, c:SIA, etc.)
+		c:PAP = {
+			save_scope_as = fy_current_enemy
+		}
+
+		scope:fy_current_enemy = {
+			save_scope_as = attacker # simula que el enemigo fue el atacante
+		}
+		root = {
+			save_scope_as = defender # simula que nosotros fuimos el defensor
+		}
+
+		set_variable = { name = fy_own_loss_pct value = 0.4 }
+		set_variable = { name = fy_enemy_loss_pct value = 0.2 }
+		set_variable = { name = fy_casualty_gap value = 0.2 }
+
+		trigger_event = {
+			id = fy_disasters.1
+			days = 1
+		}
+	}
+}

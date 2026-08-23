@@ -1,0 +1,69 @@
+﻿# =====================================================================
+# FIX (ronda 3, con script_docs reales) — nombres de campo corregidos:
+#  - "ig_approval_add"   -> interest_group_approval_add   (Mask: interest_group)
+#  - "ig_influence_add"  -> interest_group_pol_str_mult   (en Vic3 la "influencia"
+#    de un GI se llama "fuerza política" / pol_str, y es un MULTIPLICADOR,
+#    no un sumando)
+#  - "legitimacy_add"    -> country_legitimacy_base_add   (Mask: country)
+#  - "country_prestige_add" -> ya estaba bien, confirmado (Mask: country)
+#  - "throughput_add"    -> building_throughput_add       (Mask: building)
+#  - "war_support_mult"  -> no existe. Sustituido por
+#    country_war_exhaustion_casualties_mult, el concepto real más cercano
+#    a "la opinión pública se harta de la guerra".
+# =====================================================================
+
+fy_general_disgraced = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	interest_group_approval_add = -10
+}
+
+fy_general_ig_influence_loss = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	interest_group_pol_str_mult = -0.15
+}
+
+fy_general_disgrace_legitimacy_loss = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	country_legitimacy_base_add = -10
+}
+
+fy_general_disgrace_prestige_loss = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	country_prestige_add = -10
+}
+
+fy_cover_up_armed_forces_boost = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_good.dds"
+	interest_group_approval_add = 15
+	interest_group_pol_str_mult = 0.10
+}
+
+fy_cover_up_workers_peasants_anger = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	interest_group_approval_add = -10
+}
+
+fy_cover_up_pacifism = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	country_war_exhaustion_casualties_mult = 0.15
+}
+
+fy_blame_elites_legitimacy = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	country_legitimacy_base_add = -10
+}
+
+fy_blame_elites_prestige = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	country_prestige_add = -10
+}
+
+fy_audit_capitalist_anger = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	interest_group_approval_add = -12
+}
+
+fy_audit_arms_production_penalty = {
+	icon = "gfx/interface/icons/modifier_icons/modifier_generic_bad.dds"
+	building_throughput_add = -0.15
+}

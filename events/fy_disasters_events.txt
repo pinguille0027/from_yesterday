@@ -1,30 +1,48 @@
-namespace = fy_disasters
+﻿namespace = fy_disasters
 
 # =====================================================================
-# fy_disasters.1
-# Una derrota decisiva contra un rival.
+# fy_disasters.1 — Una derrota decisiva contra un rival.
+#
+# FIXES aplicados sobre la version anterior (ver error.log real):
+#  - scope:x = valor  →  NO es sintaxis valida para guardar un scope.
+#    Hay que entrar en el scope origen y usar save_scope_as desde dentro.
+#  - has_country_flag / add_country_flag  → Vic3 no tiene "flags" como
+#    EU4/CK3. Todo se hace con variables (var:), asi que usamos
+#    exists = var:x / set_variable en su lugar.
+#  - add_legitimacy / add_prestige como efecto directo → sustituidos por
+#    add_modifier apuntando a modificadores definidos en
+#    common/static_modifiers/fy_disasters_modifiers.txt (alli esta el
+#    campo country_prestige_add, confirmado como real).
+#  - every_building suelto → necesita un scope de estado por delante,
+#    así que iteramos every_owned_state → every_building.
+#  - Imagen inventada (generic_war_2.dds no existe) → la quito por ahora;
+#    puedes poner una ruta real luego. Un evento SIN "picture" es
+#    perfectamente válido, solo se ve con el icono por defecto.
 # =====================================================================
-country_event = {
-	id = fy_disasters.1
+fy_disasters.1 = {
+	type = country_event
 	title = fy_disasters.1.t
-	desc = fy_disasters.1.d
-	picture = "gfx/interface/illustrations/events/generic_war_2.dds"
-	event_image = {
-		texture = "gfx/interface/illustrations/events/generic_war_2.dds"
-	}
+	desc = fy_disasters.1.desc
+	# picture = "gfx/interface/illustrations/events/XXXX.dds"
+	# ⚠️ TODO: pon aquí una ruta real. Para encontrar una, abre
+	# cualquier archivo de /Victoria 3/game/events/*.txt y copia el
+	# valor de "picture" de un evento vanilla parecido en temática.
 
 	trigger = {
 		has_technology_researched = nationalism
 
 		# --- 2. El enemigo es rival ---
 		exists = scope:fy_current_enemy
-		scope:fy_current_enemy = { is_rival_of = root } # ajusta al comando real de tu rivalidad si difiere
+		# ✅ CONFIRMADO por script_docs (triggers.log): no existe
+		# "is_rival_of". El trigger real es "any_rival_country", un
+		# iterador tipo any_ sobre la lista de rivales del país, al que
+		# hay que darle un count/percent además de las condiciones:
+		any_rival_country = {
+			count = 1
+			this = scope:fy_current_enemy
+		}
 
-		# --- 3. La batalla implicó una parte significativa de nuestro ejército ---
-		# Aproximación: si perdimos un % grande de nuestro ejército TOTAL en
-		# una sola batalla, es porque una parte significativa estaba metida
-		# en ella. No hay forma nativa de leer "tropas en ESTA batalla" vs
-		# "tropas totales", así que usamos esto como proxy razonable.
+		# --- 3. Pérdida significativa de nuestro ejército total ---
 		exists = var:fy_own_loss_pct
 		var:fy_own_loss_pct >= 0.10
 
@@ -34,37 +52,38 @@ country_event = {
 	}
 
 	immediate = {
-		scope:enemy = scope:fy_current_enemy
-		if = {
-			limit = { exists = scope:attacker }
-			scope:general = scope:attacker
+		# FIX: "attacker"/"defender" son PAÍSES (el atacante y el
+		# defensor de la guerra), no personajes. El personaje real
+		# (el general) es "own_commander" — confirmado en la lista
+		# "Event Targets Saved from Code" de tus script_docs.
+		scope:fy_current_enemy = {
+			save_scope_as = enemy
 		}
-		else = {
-			scope:general = scope:defender
+		if = {
+			limit = { exists = scope:own_commander }
+			scope:own_commander = {
+				save_scope_as = general
+			}
 		}
 	}
 
 	option = { # Opción 1: rendir cuentas
 		name = fy_disasters.1.a
-
+		default_option = yes
 		custom_tooltip = fy_disasters.1.a.tt
 
 		if = {
 			limit = { exists = scope:general }
 			scope:general = {
 				remove_character_role = general
-				add_modifier = {
-					name = fy_general_disgraced
-					days = 1825
-				}
+				add_modifier = { name = fy_general_disgraced days = 1825 }
 				interest_group = {
-					add_modifier = {
-						name = fy_general_ig_influence_loss
-						days = 1825
-					}
+					add_modifier = { name = fy_general_ig_influence_loss days = 1825 }
 					if = {
 						limit = { is_in_government = yes }
-						root = { add_legitimacy = -10 }
+						root = {
+							add_modifier = { name = fy_general_disgrace_legitimacy_loss days = 1825 }
+						}
 					}
 				}
 			}
@@ -75,99 +94,91 @@ country_event = {
 		name = fy_disasters.1.b
 
 		ig:ig_armed_forces = {
-			add_modifier = {
-				name = fy_cover_up_armed_forces_boost
-				days = 1825
-			}
-			add_modifier = {
-				name = fy_cover_up_officers_approval
-				days = 1825
+			add_modifier = { name = fy_cover_up_armed_forces_boost days = 1825 }
+		}
+		# Encubrir el escándalo calma a los oficiales (más leales) —
+		# esto sustituye al modificador de aprobación, que sobraba.
+		# NOTA: el tooltip automático de add_loyalists con "pop_type"
+		# no nombra el colectivo (dice solo "Colectivos"), a diferencia
+		# de cuando usas "interest_group". Por eso lo envolvemos en un
+		# custom_tooltip EN BLOQUE (no suelto, para que solo sustituya
+		# el tooltip de este efecto y no tape los demás de la opción).
+		custom_tooltip = {
+			text = fy_disasters.1.b.officers_tt
+			add_loyalists = {
+				value = 0.10
+				pop_type = pop_type:officers
 			}
 		}
 
+		# ✅ CONFIRMADO por el usuario contra el archivo vanilla real:
+		# law_professional_army existe tal cual, grupo lawgroup_army_model.
 		if = {
 			limit = {
-				OR = {
-					has_law = law_type:law_professional_army
-				}
+				has_law = law_type:law_professional_army
 			}
-			ig:ig_armed_forces = {
-				add_modifier = {
-					name = fy_cover_up_soldiers_anger
-					days = 1825
+			custom_tooltip = {
+				text = fy_disasters.1.b.soldiers_tt
+				add_radicals = {
+					value = 0.15
+					pop_type = pop_type:soldiers
 				}
 			}
 		}
-		else_if = {
-			limit = {
-				OR = {
-					has_law = law_type:law_mass_mobilization
-					has_law = law_type:law_militia_army
-				}
-			}
+		else = {
 			ig:ig_trade_unions = {
-				add_modifier = {
-					name = fy_cover_up_workers_peasants_anger
-					days = 1825
-				}
+				add_modifier = { name = fy_cover_up_workers_peasants_anger days = 1825 }
 			}
 			ig:ig_rural_folk = {
-				add_modifier = {
-					name = fy_cover_up_workers_peasants_anger
-					days = 1825
-				}
+				add_modifier = { name = fy_cover_up_workers_peasants_anger days = 1825 }
 			}
 		}
 
-		add_modifier = {
-			name = fy_cover_up_pacifism
-			days = 1825
-		}
+		add_modifier = { name = fy_cover_up_pacifism days = 1825 }
 	}
 
 	option = { # Opción 3: culpar a las élites políticas y la degeneración cultural
 		name = fy_disasters.1.c
 		trigger = {
-			has_country_flag = fy_fascism_exists # sustituye por tu chequeo real de existencia de fascismo
-			NOT = { has_country_flag = fy_fascism_in_government }
+			# FIX: sin has_country_flag. Usamos variables como si fueran
+			# flags booleanas: si la variable existe, la condición es "true".
+			exists = var:fy_fascism_exists
+			NOT = { exists = var:fy_fascism_in_government }
 		}
 
 		custom_tooltip = fy_disasters.1.c.tt
-		add_country_flag = fy_fascist_agitation_boost # engánchalo a tu sistema de movimientos políticos
+		set_variable = { name = fy_fascist_agitation_boost value = 1 } # engánchalo a tu propio sistema
 
-		add_legitimacy = -10
-		add_prestige = -10
+		add_modifier = { name = fy_blame_elites_legitimacy days = 1825 }
+		add_modifier = { name = fy_blame_elites_prestige days = 1825 }
 	}
 
 	option = { # Opción 4: auditoría sobre el equipamiento militar
 		name = fy_disasters.1.d
 
 		ig:ig_industrialists = {
-			add_modifier = {
-				name = fy_audit_capitalist_anger
-				days = 1825
-			}
+			add_modifier = { name = fy_audit_capitalist_anger days = 1825 }
 		}
 
-		every_building = {
+		# FIX (ronda 3): "every_scope_building" SÍ acepta scope "country"
+		# directamente (confirmado en effects.log), así que no hace
+		# falta pasar por every_scope_state primero.
+		every_scope_building = {
 			limit = {
+				# ✅ CONFIRMADO por el usuario contra sus archivos locales:
+				# es "building_artillery_foundry" (singular), no "foundries".
 				OR = {
-					building_type = building_arms_industry
-					building_type = building_artillery_foundries
+					is_building_type = building_arms_industry
+					is_building_type = building_artillery_foundry
 				}
 			}
-			add_modifier = {
-				name = fy_audit_arms_production_penalty
-				days = 1825
-			}
+			add_modifier = { name = fy_audit_arms_production_penalty days = 1825 }
 		}
 	}
 
 	after = {
-		remove_variable = fy_battle_start_own_army
-		remove_variable = fy_battle_start_enemy_army
-		remove_variable = fy_own_army_after
-		remove_variable = fy_enemy_army_after
+		# fy_army_snapshot NO se borra aquí: es la foto diaria persistente
+		# que mantiene fy_on_daily_pulse, no algo exclusivo de este evento.
 		remove_variable = fy_own_losses
 		remove_variable = fy_enemy_losses
 		remove_variable = fy_own_loss_pct
